@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title> une pièce archéologique </title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+
+	<body>
+		
+		<span style="position:absolute;top:0px;left:0px;">
+    
+			
+	  
+			<!--Comment contrôler-->
+			<img src="../imag/controle.png" alt="controle" style="    position: absolute;
+			  width: 102px;height: 150px;left: 7px;top: 20px;"
+			>
+	  
+			<!--(Logo & le site) du Centre des Techniques Spatiales (CTS)-->
+			<a href="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2054.6888057892206!2d-0.31178321390106867!3d35.85859948015327!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd7e74c366b36539%3A0x6d0118ef63c42d9c!2sCentre%20National%20des%20Techniques%20Spatiales%20(CNTS)!5e1!3m2!1sar!2sdz!4v1593822217627!5m2!1sar!2sdz" style=" position: fixed; bottom: 0.1%; left: 1%;">
+				<img src="../imag/LogoCTS.png" alt="logoCTS" style=" width: 80px;height: 80px;"></a>
+			
+		</span>
+			
+
+		<script type="module">
+			//-----------------------obligatoire--------------------
+			import * as THREE from '../build/three.module.js';
+			//---nécessaire pour charger les fichiers gltf----------
+			import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+			//----Nécessaire pour contrôler le modèle---------------
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			//------------Nécessaire pour l'Éclairage---------------
+			import { RGBELoader } from './jsm/loaders/RGBELoader.js';
+			import { RoughnessMipmapper } from './jsm/utils/RoughnessMipmapper.js';
+
+
+			//les variables
+			var container, controls;
+			var camera, scene, renderer;
+
+			init();
+			render();
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				//Création du caméra
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000 );
+				camera.position.set(  -4.35, 4.2, 5.2);
+
+				scene = new THREE.Scene();
+
+				new RGBELoader()
+					.setDataType( THREE.UnsignedByteType )
+					.setPath( '../HDRbackground/' )
+					.load( 'HDREquirectangular11.hdr', function ( texture ) {
+
+						var envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+
+						//Utiliser le panorama comme arrière-plan de la scène
+						scene.background = envMap;
+						//Utilisez l'éclairage panoramique pour le refléter sur le modèle
+						scene.environment = envMap;
+
+						texture.dispose();
+						pmremGenerator.dispose();
+						render();
+						
+
+						//Téléchargement les modeles
+						//Modele
+						var Modele1 = new GLTFLoader().setPath( 'modele/' );
+						Modele1.load( 'Model9.1.gltf', function ( gltf ) {
+
+							scene.add( gltf.scene );
+							render();
+
+						} );
+						var Modele2 = new GLTFLoader().setPath( 'modele/' );
+						Modele2.load( 'Model9.2.gltf', function ( gltf ) {
+
+							scene.add( gltf.scene );
+							render();
+
+						} );
+					
+
+					} );
+				
+				//Renderer
+				renderer = new THREE.WebGLRenderer( { antialias: true , alpha: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 2;
+				renderer.outputEncoding = THREE.sRGBEncoding;
+				container.appendChild( renderer.domElement );
+				
+				//Cette classe génère une carte d'environnement de rayonnement mipmappée (PMREM)
+				// préfiltrée à partir d'une texture d'environnement cubeMap.
+				var pmremGenerator = new THREE.PMREMGenerator( renderer );
+				pmremGenerator.compileEquirectangularShader();
+				
+				//Les commandes d'orbite permettent à la caméra de tourner autour d'une cible.
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.addEventListener( 'change', render );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			//Créer une function qui met à jour la fenêtre
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				render();
+
+			}
+
+			
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+</html>
